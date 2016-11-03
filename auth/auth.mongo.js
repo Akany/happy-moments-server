@@ -2,7 +2,8 @@ var mongo = require('../mongo.js');
 
 module.exports = {
     getUser,
-    setToken
+    setToken,
+    restoreUser
 };
 
 
@@ -35,6 +36,24 @@ function setToken(email, token) {
                 }
 
                 resolve();
+            });
+    });
+}
+
+function restoreUser(token) {
+    return new Promise((resolve, reject) => {
+        mongo
+            .getConnection()
+            .collection('users')
+            .find({
+                token: token
+            })
+            .toArray((err, users) => {
+                if (err) {
+                    reject(err);
+                }
+
+                resolve(users[0]);
             });
     });
 }

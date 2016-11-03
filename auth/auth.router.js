@@ -51,7 +51,7 @@ function getUser(req, res, next) {
 function setToken(req, res, next) {
     var user = req.user;
 
-    user.token = authToken.generate();
+    user.token = authToken.generate().toString();
 
     authMongo
         .setToken(user.email, user.token)

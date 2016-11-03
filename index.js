@@ -6,6 +6,8 @@ var app = express();
 var mongo = require('./mongo.js');
 
 var auth = require('./auth/auth.router.js');
+var { restoreUser } = require('./auth/auth.token.js');
+var moments = require('./moments/moments.router');
 
 var PORT = 3000;
 
@@ -19,6 +21,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', auth);
+app.use('/api/moments', restoreUser, moments);
 
 mongo
     .connect()
