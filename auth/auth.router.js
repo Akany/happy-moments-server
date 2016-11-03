@@ -2,30 +2,60 @@ var express = require('express');
 var auth = express.Router();
 
 var authMongo = require('./auth.mongo.js');
+var authToken = require('./auth.token.js');
 
-auth.post('/', (req, res) => {
-    if (!validateLogin(req.body)) {
-        res.status(404).end('validation failed');
+auth.post('/', validateLogin, getUser, setToken, (req, res) => {
+    res
+        .status(200)
+        .json(req.user)
+        .end();
+});
+
+function validateLogin(req, res, next) {
+    if (req.body.email && req.body.password) {
+        next();
+
+        return;
     }
 
+    res.status(200).json({
+        status: false,
+        mesage: 'Email or Password is not provided'
+    });
+}
+
+function getUser(req, res, next) {
     authMongo
-        .getUser(req.body.email, req.body.password)
+        .getUser(req.body.email)
         .then(user => {
             if (!user) {
                 return res
                     .status(200)
-                    .end('User doesn\'t exist');
+                    .end(`User doesn't exist`);
             }
 
-            res
-                .status(200)
-                .json(user)
-                .end();
-        });
-});
+            if (user.password !== req.body.password) {
+                return res.status(200).json({
+                    status: false,
+                    message: 'Password is not correct'
+                });
+            }
 
-function validateLogin(data) {
-    return data.email && data.password;
+            delete user.password;
+
+            req.user = user;
+            next();
+        });
+}
+
+function setToken(req, res, next) {
+    var user = req.user;
+
+    user.token = authToken.generate();
+
+    authMongo
+        .setToken(user.email, user.token)
+        .then(next);
 }
 
 module.exports = auth;
